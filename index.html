@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14171F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VideoShelf">
+<title>VideoShelf</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>VideoShelf</h1>
+      <p>Your saved videos, shelved and searchable</p>
+    </div>
+  </div>
+  <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle light mode">☀</button>
+</header>
+
+<main class="container">
+
+  <section class="card add-panel">
+    <h2>Add a video</h2>
+    <form id="videoForm" novalidate>
+      <label>
+        YouTube link
+        <input id="urlInput" type="url" placeholder="https://youtube.com/watch?v=..." inputmode="url" required>
+      </label>
+      <label>
+        Custom name
+        <input id="nameInput" type="text" maxlength="120" placeholder="e.g. PHP Lecture 1 — Arrays" required>
+      </label>
+      <div class="field-row">
+        <label>
+          Category
+          <input id="categoryInput" type="text" maxlength="40" placeholder="e.g. PHP" list="categoryList">
+          <datalist id="categoryList"></datalist>
+        </label>
+      </div>
+      <label>
+        Notes <span class="optional">optional</span>
+        <textarea id="notesInput" maxlength="500" placeholder="Anything worth remembering about this one..."></textarea>
+      </label>
+      <div class="form-footer">
+        <p id="formMsg" class="msg" aria-live="polite"></p>
+        <button class="btn-primary" type="submit">Add to shelf</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="toolbar">
+    <input id="searchInput" type="search" placeholder="Search name, category, notes...">
+    <div class="toolbar-row">
+      <select id="filterSelect" aria-label="Filter">
+        <option value="all">All videos</option>
+        <option value="favorites">★ Favorites</option>
+        <option value="unwatched">○ Unwatched</option>
+        <option value="watched">✓ Watched</option>
+      </select>
+      <select id="categoryFilter" aria-label="Category">
+        <option value="all">All categories</option>
+      </select>
+      <div class="view-toggle" role="group" aria-label="View">
+        <button type="button" class="view-btn active" data-view="cards" aria-label="Card view">⬛</button>
+        <button type="button" class="view-btn" data-view="compact" aria-label="Compact view">☰</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <section id="videoList" class="video-list view-cards"></section>
+
+  <section class="io-panel">
+    <button id="exportBtn" class="btn-ghost" type="button">Export backup</button>
+    <label class="btn-ghost file-label">
+      Import backup
+      <input id="importInput" type="file" accept="application/json" hidden>
+    </label>
+  </section>
+
+</main>
+
+<!-- Edit modal: custom, not native <dialog>, to avoid mobile webview suppression -->
+<div id="editOverlay" class="overlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editHeading">
+    <h2 id="editHeading">Edit video</h2>
+    <label>Name<input id="editName" maxlength="120"></label>
+    <label>Category<input id="editCategory" maxlength="40" list="categoryList"></label>
+    <label>Notes<textarea id="editNotes" maxlength="500"></textarea></label>
+    <div class="modal-actions">
+      <button id="editCancel" class="btn-ghost" type="button">Cancel</button>
+      <button id="editSave" class="btn-primary" type="button">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal: custom, replaces native confirm() which is suppressed in some mobile webviews -->
+<div id="confirmOverlay" class="overlay" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="confirmHeading">
+    <h2 id="confirmHeading">Remove this video?</h2>
+    <p id="confirmBody" class="confirm-body">This can't be undone.</p>
+    <div class="modal-actions">
+      <button id="confirmCancel" class="btn-ghost" type="button">Cancel</button>
+      <button id="confirmOk" class="btn-danger" type="button">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
