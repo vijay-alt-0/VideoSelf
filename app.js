@@ -356,4 +356,19 @@ if('serviceWorker' in navigator){
   });
 }
 
+/* ---------- Deep-link: app shortcut "Add a video" ---------- */
+function handleShortcutDeepLink(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('action') === 'add'){
+    const urlField = $('urlInput');
+    if(urlField){
+      urlField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      urlField.focus();
+    }
+    // Clean the URL so a refresh doesn't keep re-triggering the scroll/focus
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
 render();
+handleShortcutDeepLink();
