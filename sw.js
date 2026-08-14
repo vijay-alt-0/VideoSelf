@@ -1,13 +1,13 @@
-const CACHE_NAME = 'videoshelf-pwa-v4';
+const CACHE_NAME = 'videoshelf-pwa-v5';
 const OFFLINE_URL = './index.html';
 const ASSETS = [
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -99,8 +99,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'VideoShelf';
   const options = {
     body: data.body || 'You have a new VideoShelf notification.',
-    icon: './icons/icon-192.png',
-    badge: './icons/icon-192.png',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
     data: { url: data.url || './' }
   };
 
