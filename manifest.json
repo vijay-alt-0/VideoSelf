@@ -5,6 +5,9 @@
   "id": "videoshelf-base",
   "start_url": "./",
   "scope": "./",
+  "display_override": [
+    "standalone"
+  ],
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#14171F",
@@ -27,6 +30,54 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add video",
+      "short_name": "Add video",
+      "description": "Save a new YouTube video to VideoShelf.",
+      "url": "./?action=add"
+    },
+    {
+      "name": "Favorites",
+      "short_name": "Favorites",
+      "description": "Show your favorite saved videos.",
+      "url": "./?filter=favorites"
+    },
+    {
+      "name": "Unwatched",
+      "short_name": "Unwatched",
+      "description": "Show videos you have not watched yet.",
+      "url": "./?filter=unwatched"
+    }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": {
+      "title": "name",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "application/json": [
+          ".json"
+        ]
+      }
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+videoshelf",
+      "url": "./?videoshelf=%s"
     }
   ],
   "lang": "en",

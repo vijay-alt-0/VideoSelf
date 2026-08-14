@@ -271,6 +271,79 @@ $('themeBtn').addEventListener('click', () => {
 });
 applyTheme(localStorage.getItem(THEME_KEY) === 'light');
 
+/* ---------- PWA launch/share/file integrations ---------- */
+function validYouTubeUrl(url){
+  return typeof url === 'string' && !!getVideoId(url);
+}
+
+function handleIncomingLaunch(){
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action');
+  const filter = params.get('filter');
+  const sharedUrl = params.get('url');
+  const sharedName = params.get('name') || params.get('title') || '';
+  const sharedText = params.get('text') || '';
+  const protocolValue = params.get('videoshelf');
+
+  if (filter && ['all','favorites','watched','unwatched'].includes(filter)) {
+    $('filterSelect').value = filter;
+  }
+
+  let protocolUrl = '';
+  try { protocolUrl = protocolValue ? decodeURIComponent(protocolValue) : ''; } catch (_) {}
+  const incomingUrl = sharedUrl || protocolUrl;
+  if (validYouTubeUrl(incomingUrl)) {
+    $('urlInput').value = incomingUrl;
+    $('nameInput').value = sharedName || '';
+    if (sharedText && !$('notesInput').value) $('notesInput').value = sharedText.slice(0, 500);
+    $('formMsg').textContent = 'Shared video loaded — review it and tap Add to shelf.';
+  }
+
+  if (action === 'add') {
+    setTimeout(() => $('urlInput').scrollIntoView({behavior:'smooth', block:'center'}), 50);
+    setTimeout(() => $('urlInput').focus(), 300);
+  }
+}
+
+async function registerBackgroundCapabilities(){
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    if ('sync' in registration) {
+      try { await registration.sync.register('videoshelf-background-sync'); } catch (_) {}
+    }
+    if ('periodicSync' in registration) {
+      try {
+        const permission = await registration.periodicSync.permissionState({
+          tag: 'videoshelf-periodic-sync'
+        });
+        if (permission === 'granted') {
+          await registration.periodicSync.register('videoshelf-periodic-sync', {
+            minInterval: 24 * 60 * 60 * 1000
+          });
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
+function setupLaunchQueue(){
+  if (!('launchQueue' in window) || typeof window.launchQueue.setConsumer !== 'function') return;
+  window.launchQueue.setConsumer(async (launchParams) => {
+    const files = launchParams.files || [];
+    for (const fileHandle of files) {
+      try {
+        const file = await fileHandle.getFile();
+        if (file.type === 'application/json' || file.name.toLowerCase().endsWith('.json')) {
+          await importBackupFile(file);
+        }
+      } catch (error) {
+        console.error('File handler failed', error);
+      }
+    }
+  });
+}
+
 /* ---------- Export / Import ---------- */
 $('exportBtn').addEventListener('click', () => {
   if(videos.length === 0){ showToast('Nothing to export yet'); return; }
@@ -293,67 +366,68 @@ $('exportBtn').addEventListener('click', () => {
   showToast('Backup downloaded');
 });
 
-$('importInput').addEventListener('change', (e) => {
+async function importBackupFile(file){
+  const text = await file.text();
+  const data = JSON.parse(text);
+  const incoming = Array.isArray(data) ? data : data.videos;
+  if(!Array.isArray(incoming)) throw new Error('No videos array found in file');
+
+  const existingIds = new Set(videos.map(v => v.id));
+  const existingUrls = new Set(videos.map(v => v.url));
+  let added = 0, skipped = 0;
+
+  incoming.forEach(raw => {
+    if(!raw || typeof raw !== 'object' || !raw.url || !raw.name){ skipped++; return; }
+    const videoId = raw.videoId || getVideoId(raw.url);
+    if(!videoId){ skipped++; return; }
+    if(existingUrls.has(raw.url)){ skipped++; return; }
+
+    const id = (raw.id && !existingIds.has(raw.id)) ? raw.id :
+      (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2));
+    existingIds.add(id);
+    existingUrls.add(raw.url);
+
+    videos.push({
+      id,
+      url: String(raw.url),
+      name: String(raw.name).slice(0,120),
+      videoId,
+      category: raw.category ? String(raw.category).slice(0,40) : '',
+      notes: raw.notes ? String(raw.notes).slice(0,500) : '',
+      favorite: !!raw.favorite,
+      watched: !!raw.watched,
+      createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now()
+    });
+    added++;
+  });
+
+  save();
+  render();
+  showToast(`Imported ${added} video${added===1?'':'s'}${skipped ? `, skipped ${skipped}` : ''}`);
+}
+
+$('importInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const data = JSON.parse(reader.result);
-      const incoming = Array.isArray(data) ? data : data.videos;
-      if(!Array.isArray(incoming)) throw new Error('No videos array found in file');
-
-      // Validate + sanitize each entry; skip anything malformed rather than crash
-      const existingIds = new Set(videos.map(v => v.id));
-      const existingUrls = new Set(videos.map(v => v.url));
-      let added = 0, skipped = 0;
-
-      incoming.forEach(raw => {
-        if(!raw || typeof raw !== 'object' || !raw.url || !raw.name){ skipped++; return; }
-        const videoId = raw.videoId || getVideoId(raw.url);
-        if(!videoId){ skipped++; return; }
-        if(existingUrls.has(raw.url)){ skipped++; return; } // avoid duplicates on re-import
-
-        const id = (raw.id && !existingIds.has(raw.id)) ? raw.id :
-          (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2));
-        existingIds.add(id);
-        existingUrls.add(raw.url);
-
-        videos.push({
-          id,
-          url: String(raw.url),
-          name: String(raw.name).slice(0,120),
-          videoId,
-          category: raw.category ? String(raw.category).slice(0,40) : '',
-          notes: raw.notes ? String(raw.notes).slice(0,500) : '',
-          favorite: !!raw.favorite,
-          watched: !!raw.watched,
-          createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now()
-        });
-        added++;
-      });
-
-      save();
-      render();
-      showToast(`Imported ${added} video${added===1?'':'s'}${skipped ? `, skipped ${skipped}` : ''}`);
-    }catch(err){
-      console.error('Import failed', err);
-      showToast("Couldn't read that file — is it a VideoShelf backup?");
-    }
+  try {
+    await importBackupFile(file);
+  } catch(err) {
+    console.error('Import failed', err);
+    showToast("Couldn't read that file — is it a VideoShelf backup?");
+  } finally {
     e.target.value = '';
-  };
-  reader.onerror = () => {
-    showToast('Failed to read file');
-    e.target.value = '';
-  };
-  reader.readAsText(file);
+  }
 });
 
 /* ---------- Service worker ---------- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed', err));
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(() => registerBackgroundCapabilities())
+      .catch(err => console.error('SW registration failed', err));
   });
 }
 
+setupLaunchQueue();
+handleIncomingLaunch();
 render();
