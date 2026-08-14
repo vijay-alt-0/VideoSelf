@@ -419,13 +419,11 @@ $('importInput').addEventListener('change', async (e) => {
   }
 });
 
-/* ---------- Service worker ---------- */
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(() => registerBackgroundCapabilities())
-      .catch(err => console.error('SW registration failed', err));
-  });
+/* ---------- Service worker / PWA integrations ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready
+    .then(() => registerBackgroundCapabilities())
+    .catch(err => console.error('Service worker readiness failed', err));
 }
 
 setupLaunchQueue();
