@@ -1,4 +1,0 @@
-VideoShelf PWA - V1
-
-Deploy all files at the same HTTPS origin. The service worker is ./sw.js and is registered from index.html.
-After redeploying a new version, uninstall/reinstall the PWA if the browser has an older manifest cached.
