@@ -4,6 +4,27 @@
    sub-categories + colors, timestamps for progress tracking.
    ========================================================================== */
 
+/* Surface any runtime error directly on screen — without this, a broken
+   button just does nothing with no way to tell why on a phone with no
+   developer tools attached. */
+window.addEventListener('error', (e) => {
+  showErrorBanner(`${e.message} (line ${e.lineno})`);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  showErrorBanner(String(e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+function showErrorBanner(msg){
+  let banner = document.getElementById('errorBanner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'errorBanner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#D9654F;color:#fff;' +
+      'font-size:12px;padding:10px 14px;z-index:9999;font-family:monospace;white-space:pre-wrap;';
+    document.body.appendChild(banner);
+  }
+  banner.textContent = '⚠ Error: ' + msg;
+}
+
 const STORAGE_KEY   = 'videoshelf_base_v1';        // videos array
 const CATS_KEY       = 'videoshelf_categories_v1'; // category registry
 const THEME_KEY      = 'videoshelf_base_theme';
