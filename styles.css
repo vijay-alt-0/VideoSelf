@@ -237,6 +237,7 @@ textarea{min-height:70px; resize:vertical;}
 
 /* Compact view */
 .video-list.view-compact .video-item{grid-template-columns:6px 1fr;}
+.video-list.view-compact .video-item.has-select{grid-template-columns:32px 6px 1fr;}
 .video-list.view-compact .thumb-wrap{display:none;}
 .video-list.view-compact .video-content{padding:10px 12px;}
 .video-list.view-compact .notes{display:none;}
@@ -312,3 +313,171 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .thumb{width:80px;}
   .thumb-fallback{width:80px;}
 }
+
+/* ============================================================
+   v2 additions: tabs, status badges, sub-categories, drag/drop,
+   bulk select, category manager, dashboard/calendar
+   ============================================================ */
+
+/* ---------- Tabs ---------- */
+.tabs{
+  display:flex; gap:0; max-width:680px; margin:0 auto; padding:0 16px;
+  border-bottom:1px solid var(--line);
+}
+.tab-btn{
+  flex:1; background:none; border:none; color:var(--bone-dim);
+  padding:12px 8px; font-size:14px; font-weight:600; cursor:pointer;
+  border-bottom:2px solid transparent;
+}
+.tab-btn.active{ color:var(--amber); border-bottom-color:var(--amber); }
+
+/* ---------- Two-column field row ---------- */
+.field-row.two-col{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.field-row.two-col label{ margin-top:0; }
+
+/* ---------- Status badge ---------- */
+.chip-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
+.chip-row .chip{ margin-top:0; }
+.chip{ border-left:3px solid var(--chip-color, var(--amber)); }
+.badge{
+  display:inline-block; border-radius:999px; padding:2px 9px; font-size:10.5px; font-weight:700;
+}
+.badge-unwatched{ background:var(--ink-3); color:var(--bone-dim); border:1px solid var(--line); }
+.badge-watched{ background:rgba(232,163,61,0.15); color:var(--amber); border:1px solid var(--amber-dim); }
+.badge-completed{ background:rgba(111,168,160,0.18); color:#8FCFC3; border:1px solid #3E5B56; }
+
+/* ---------- Days-ago badge on thumbnail ---------- */
+.thumb-wrap{ position:relative; }
+.days-badge{
+  position:absolute; top:4px; left:4px;
+  background:rgba(20,23,31,0.8); color:var(--bone);
+  font-size:9px; font-weight:600; padding:2px 6px; border-radius:5px; letter-spacing:0.2px;
+}
+.spine.dimmed{ opacity:0.35; }
+
+/* ---------- Select mode ---------- */
+.icon-btn.small{ width:32px; height:32px; font-size:14px; }
+.btn-ghost.active{ background:var(--amber); color:var(--ink); border-color:var(--amber); }
+.select-box{
+  display:flex; align-items:center; justify-content:center;
+  background:var(--ink-3); font-size:16px; color:var(--amber);
+  cursor:pointer; user-select:none;
+}
+.video-item.is-selected{ outline:2px solid var(--amber); outline-offset:-2px; }
+
+.bulk-bar{
+  position:sticky; top:calc(env(safe-area-inset-top) + 66px); z-index:15;
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--ink-3); border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:10px 14px; margin-top:12px; font-size:13px; font-weight:600;
+}
+.bulk-actions{ display:flex; gap:8px; }
+.bulk-actions .btn-ghost, .bulk-actions .btn-danger{ padding:8px 12px; font-size:12.5px; }
+
+/* ---------- Drag and drop ---------- */
+.video-item.has-drag{ grid-template-columns:26px 6px 96px 1fr; }
+.drag-handle{
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bone-dim); font-size:16px; cursor:grab; touch-action:none;
+  background:var(--ink-3);
+}
+.video-item.dragging{ opacity:0.4; }
+
+/* When select mode adds its own leading column too */
+.video-item.has-select{ grid-template-columns:32px 6px 96px 1fr; }
+.video-item.has-select.has-drag{ grid-template-columns:32px 26px 6px 96px 1fr; }
+
+/* ---------- Toast action button (Undo) ---------- */
+.toast{ display:flex; align-items:center; gap:12px; }
+.toast-action{
+  background:none; border:none; color:var(--amber); font-weight:700;
+  font-size:13px; cursor:pointer; padding:0;
+}
+
+/* ---------- Category manager ---------- */
+.cat-manager-list{ display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; }
+.cat-row{
+  display:flex; align-items:center; gap:10px;
+  background:var(--ink-3); border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:8px 10px;
+}
+.cat-color-input{
+  width:34px; height:34px; padding:0; border-radius:8px; border:1px solid var(--line);
+  background:none; cursor:pointer; flex-shrink:0;
+}
+.cat-row-name{ flex:1; font-size:13.5px; font-weight:600; }
+.cat-row-count{ font-size:11.5px; color:var(--bone-dim); }
+.empty-note{ font-size:13px; color:var(--bone-dim); text-align:center; padding:16px 0; }
+
+/* ---------- Dashboard ---------- */
+.dash-stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+.dash-stat{
+  background:var(--ink-3); border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:10px 6px; text-align:center;
+}
+.dash-num{ display:block; font-size:19px; font-weight:800; color:var(--amber); }
+.dash-label{ display:block; font-size:9.5px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.3px; margin-top:2px; }
+
+.dash-cal-header{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+  font-family:var(--font-display); font-size:15px; font-weight:700;
+}
+.calendar-grid{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:3px;
+}
+.cal-dow{ text-align:center; font-size:10px; color:var(--bone-dim); padding:4px 0; font-weight:700; }
+.cal-cell{
+  aspect-ratio:1; background:var(--ink-3); border:1px solid var(--line); border-radius:7px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:var(--bone); font-size:11px; cursor:pointer; position:relative;
+}
+.cal-cell.empty{ background:none; border:none; cursor:default; }
+.cal-cell.is-today{ border-color:var(--amber); }
+.cal-cell.is-selected{ background:var(--amber); color:var(--ink); font-weight:700; }
+.cal-daynum{ line-height:1; }
+.cal-dots{ display:flex; gap:2px; margin-top:2px; height:5px; }
+.dot-added, .dot-activity{ width:4px; height:4px; border-radius:50%; display:inline-block; }
+.dot-added{ background:var(--teal, #6FA8A0); }
+.dot-activity{ background:var(--amber); }
+.cal-cell.is-selected .dot-added, .cal-cell.is-selected .dot-activity{ background:var(--ink); }
+
+.cal-legend{ display:flex; gap:16px; margin-top:10px; font-size:11px; color:var(--bone-dim); }
+.cal-legend span{ display:flex; align-items:center; gap:5px; }
+.cal-legend i{ width:6px; height:6px; border-radius:50%; display:inline-block; }
+.cal-legend i.dot-added{ background:#6FA8A0; }
+.cal-legend i.dot-activity{ background:var(--amber); }
+
+.dash-day-header{ display:flex; align-items:center; justify-content:space-between; }
+.dash-day-header h2{ font-family:var(--font-display); font-size:16px; margin:0; }
+.dash-day-list{ margin-top:12px; display:flex; flex-direction:column; gap:6px; }
+.dash-day-item{
+  display:flex; align-items:center; gap:8px;
+  background:var(--ink-3); border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:8px 10px; font-size:12.5px;
+}
+.dash-day-tag{
+  flex-shrink:0; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:999px; text-transform:uppercase;
+}
+.tag-added{ background:rgba(111,168,160,0.18); color:#8FCFC3; }
+.tag-watched{ background:rgba(232,163,61,0.15); color:var(--amber); }
+.tag-completed{ background:rgba(142,143,224,0.18); color:#B3B4EE; }
+.dash-day-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.dash-cat-list{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+.dash-cat-row{ display:flex; flex-direction:column; gap:5px; }
+.dash-cat-name{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; }
+.dash-cat-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.dash-cat-bar{
+  display:flex; height:8px; border-radius:4px; overflow:hidden; background:var(--ink-3);
+}
+.bar-seg{ display:block; }
+.bar-unwatched{ background:#4A4F5E; }
+.bar-watched{ background:var(--amber); }
+.bar-completed{ background:#6FA8A0; }
+.dash-cat-counts{ font-size:10.5px; color:var(--bone-dim); }
+
+.import-mode-label{
+  width:100%; font-size:12px; font-weight:600; color:var(--bone-dim);
+  text-transform:uppercase; letter-spacing:0.4px;
+}
+.import-mode-label select{ margin-top:6px; }

@@ -4,28 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#14171F">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="VideoShelf">
 <title>VideoShelf</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="styles.css">
-<script>
-  // Register the service worker as early as possible. This makes the PWA
-  // service-worker relationship discoverable before application logic runs.
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" })
-        .then(function (registration) {
-          console.log("VideoShelf service worker registered", registration.scope);
-        })
-        .catch(function (error) {
-          console.error("VideoShelf service worker registration failed", error);
-        });
-    });
-  }
-</script>
 </head>
 <body>
 
@@ -40,7 +20,15 @@
   <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle light mode">☀</button>
 </header>
 
+<nav class="tabs">
+  <button class="tab-btn active" type="button" data-tab="shelfTab">Shelf</button>
+  <button class="tab-btn" type="button" data-tab="dashboardTab">Dashboard</button>
+</nav>
+
 <main class="container">
+
+<!-- ============ SHELF TAB ============ -->
+<section id="shelfTab" class="tab-panel">
 
   <section class="card add-panel">
     <h2>Add a video</h2>
@@ -53,11 +41,16 @@
         Custom name
         <input id="nameInput" type="text" maxlength="120" placeholder="e.g. PHP Lecture 1 — Arrays" required>
       </label>
-      <div class="field-row">
+      <div class="field-row two-col">
         <label>
           Category
           <input id="categoryInput" type="text" maxlength="40" placeholder="e.g. PHP" list="categoryList">
           <datalist id="categoryList"></datalist>
+        </label>
+        <label>
+          Sub-category <span class="optional">optional</span>
+          <input id="subCategoryInput" type="text" maxlength="40" placeholder="e.g. Arrays" list="subCategoryList">
+          <datalist id="subCategoryList"></datalist>
         </label>
       </div>
       <label>
@@ -77,20 +70,46 @@
       <select id="filterSelect" aria-label="Filter">
         <option value="all">All videos</option>
         <option value="favorites">★ Favorites</option>
-        <option value="unwatched">○ Unwatched</option>
-        <option value="watched">✓ Watched</option>
+        <option value="unwatched">○ Not watched</option>
+        <option value="watched">◐ Watched</option>
+        <option value="completed">✓ Completed</option>
       </select>
+      <select id="sortSelect" aria-label="Sort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="name-asc">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="category">By category</option>
+        <option value="manual">Manual order (drag)</option>
+      </select>
+    </div>
+    <div class="toolbar-row">
       <select id="categoryFilter" aria-label="Category">
         <option value="all">All categories</option>
+      </select>
+      <select id="subCategoryFilter" aria-label="Sub-category" hidden>
+        <option value="all">All sub-categories</option>
       </select>
       <div class="view-toggle" role="group" aria-label="View">
         <button type="button" class="view-btn active" data-view="cards" aria-label="Card view">⬛</button>
         <button type="button" class="view-btn" data-view="compact" aria-label="Compact view">☰</button>
       </div>
     </div>
+    <div class="toolbar-row">
+      <button id="selectModeBtn" class="btn-ghost" type="button">Select</button>
+      <button id="manageCategoriesBtn" class="btn-ghost" type="button">Category colors</button>
+    </div>
   </section>
 
   <section class="stats" id="stats"></section>
+
+  <div id="bulkBar" class="bulk-bar" hidden>
+    <span id="bulkCount"></span>
+    <div class="bulk-actions">
+      <button id="bulkMoveBtn" class="btn-ghost" type="button">Move to...</button>
+      <button id="bulkDeleteBtn" class="btn-danger" type="button">Delete</button>
+    </div>
+  </div>
 
   <section id="videoList" class="video-list view-cards"></section>
 
@@ -101,15 +120,73 @@
       <input id="importInput" type="file" accept="application/json" hidden>
     </label>
   </section>
+  <section class="io-panel">
+    <label class="import-mode-label">
+      Import mode
+      <select id="importModeSelect">
+        <option value="merge">Merge (add new, skip duplicates)</option>
+        <option value="replace">Replace everything</option>
+      </select>
+    </label>
+  </section>
+
+</section>
+
+<!-- ============ DASHBOARD TAB ============ -->
+<section id="dashboardTab" class="tab-panel" hidden>
+
+  <section class="card">
+    <h2>Overall progress</h2>
+    <div id="dashOverall" class="dash-stat-row"></div>
+  </section>
+
+  <section class="card">
+    <div class="dash-cal-header">
+      <button id="calPrevBtn" class="icon-btn small" type="button" aria-label="Previous month">‹</button>
+      <span id="calendarLabel"></span>
+      <button id="calNextBtn" class="icon-btn small" type="button" aria-label="Next month">›</button>
+    </div>
+    <div id="calendarGrid" class="calendar-grid"></div>
+    <div class="cal-legend">
+      <span><i class="dot-added"></i> Added</span>
+      <span><i class="dot-activity"></i> Watched/Completed</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="dash-day-header">
+      <h2 id="dashboardDateLabel">Today</h2>
+      <button id="dashTodayBtn" class="btn-ghost" type="button">Jump to today</button>
+    </div>
+    <div id="dashDayStats" class="dash-stat-row"></div>
+    <div id="dashDayList" class="dash-day-list"></div>
+  </section>
+
+  <section class="card">
+    <h2>By category</h2>
+    <div id="dashCategoryBreakdown" class="dash-cat-list"></div>
+  </section>
+
+</section>
 
 </main>
 
-<!-- Edit modal: custom, not native <dialog>, to avoid mobile webview suppression -->
+<!-- Edit modal -->
 <div id="editOverlay" class="overlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editHeading">
     <h2 id="editHeading">Edit video</h2>
     <label>Name<input id="editName" maxlength="120"></label>
-    <label>Category<input id="editCategory" maxlength="40" list="categoryList"></label>
+    <div class="field-row two-col">
+      <label>Category<input id="editCategory" maxlength="40" list="categoryList"></label>
+      <label>Sub-category<input id="editSubCategory" maxlength="40" list="subCategoryList"></label>
+    </div>
+    <label>Status
+      <select id="editStatus">
+        <option value="unwatched">Not watched</option>
+        <option value="watched">Watched</option>
+        <option value="completed">Completed</option>
+      </select>
+    </label>
     <label>Notes<textarea id="editNotes" maxlength="500"></textarea></label>
     <div class="modal-actions">
       <button id="editCancel" class="btn-ghost" type="button">Cancel</button>
@@ -118,7 +195,7 @@
   </div>
 </div>
 
-<!-- Confirm modal: custom, replaces native confirm() which is suppressed in some mobile webviews -->
+<!-- Confirm modal (single + bulk delete) -->
 <div id="confirmOverlay" class="overlay" hidden>
   <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="confirmHeading">
     <h2 id="confirmHeading">Remove this video?</h2>
@@ -126,6 +203,34 @@
     <div class="modal-actions">
       <button id="confirmCancel" class="btn-ghost" type="button">Cancel</button>
       <button id="confirmOk" class="btn-danger" type="button">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category color manager -->
+<div id="categoryManagerOverlay" class="overlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="catManagerHeading">
+    <h2 id="catManagerHeading">Category colors</h2>
+    <div id="categoryManagerList" class="cat-manager-list"></div>
+    <div class="modal-actions">
+      <button id="categoryManagerClose" class="btn-primary" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk move modal -->
+<div id="bulkMoveOverlay" class="overlay" hidden>
+  <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="bulkMoveHeading">
+    <h2 id="bulkMoveHeading">Move selected videos</h2>
+    <label>Category
+      <select id="bulkMoveCategorySelect"></select>
+    </label>
+    <label>Sub-category <span class="optional">optional</span>
+      <input id="bulkMoveSubInput" maxlength="40" placeholder="e.g. Arrays">
+    </label>
+    <div class="modal-actions">
+      <button id="bulkMoveCancel" class="btn-ghost" type="button">Cancel</button>
+      <button id="bulkMoveConfirm" class="btn-primary" type="button">Move</button>
     </div>
   </div>
 </div>
